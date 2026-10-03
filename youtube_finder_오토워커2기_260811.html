@@ -1,0 +1,2317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뜨는 유튜브 채널 찾기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            color: #dc3545;
+        }
+
+        header p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        /* === Tab Navigation === */
+        .tab-nav {
+            display: flex;
+            gap: 0;
+            margin-bottom: 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #dc3545;
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* === Sections === */
+        .section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title .arrow {
+            transition: transform 0.3s;
+        }
+
+        .section-title.collapsed .arrow {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .section-content.hidden {
+            max-height: 0;
+            padding: 0;
+        }
+
+        /* === Input === */
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #dc3545;
+        }
+
+        .input-hint {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .input-hint a {
+            color: #dc3545;
+        }
+
+        .api-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .api-status.not-saved {
+            background: #fff3e0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 500px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* === Buttons === */
+        .search-btn {
+            width: 100%;
+            padding: 16px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .search-btn:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .search-btn:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        .save-btn {
+            background: #28a745;
+            margin-top: 8px;
+        }
+
+        .btn-small {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #c82333;
+        }
+
+        .btn-primary:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 4px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .btn-icon:hover {
+            opacity: 1;
+        }
+
+        /* === Spinner === */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* === Autocomplete === */
+        .autocomplete-wrapper {
+            position: relative;
+        }
+
+        .autocomplete-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            list-style: none;
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 50;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .autocomplete-list.ac-hidden {
+            display: none;
+        }
+
+        .autocomplete-list li {
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .autocomplete-list li:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-list li:hover,
+        .autocomplete-list li.active {
+            background: #fff3f3;
+            color: #dc3545;
+        }
+
+        /* === Folder / Channel Management === */
+        .folder-add-row,
+        .channel-add-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .folder-add-row input,
+        .channel-add-row input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+
+        .folder-add-row input:focus,
+        .channel-add-row input:focus {
+            outline: none;
+            border-color: #dc3545;
+        }
+
+        .folder-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .folder-item .folder-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .folder-item .folder-header:hover {
+            background: #e9ecef;
+        }
+
+        .folder-item.selected .folder-header {
+            background: #ffe6e8;
+            border: 1px solid #dc3545;
+        }
+
+        .folder-name {
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .folder-count {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .folder-actions {
+            display: flex;
+            gap: 2px;
+        }
+
+        .channel-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .channel-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .channel-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .channel-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .channel-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .channel-name:hover {
+            color: #dc3545;
+        }
+
+        .channel-subs {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+            font-size: 0.95rem;
+        }
+
+        .panel-hidden {
+            display: none !important;
+        }
+
+        /* === Results === */
+        .results-header {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1rem;
+        }
+
+        .results-header.success {
+            color: #28a745;
+        }
+
+        .results-header.error {
+            color: #dc3545;
+            background: #ffe6e6;
+            border-radius: 8px;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        .card-inner {
+            display: flex;
+            gap: 16px;
+        }
+
+        @media (max-width: 500px) {
+            .card-inner {
+                flex-direction: column;
+            }
+        }
+
+        .card-thumbnail {
+            flex-shrink: 0;
+            width: 180px;
+        }
+
+        @media (max-width: 500px) {
+            .card-thumbnail {
+                width: 100%;
+            }
+        }
+
+        .card-thumbnail img {
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .card-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-title a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .card-title a:hover {
+            color: #dc3545;
+        }
+
+        .card-channel {
+            margin-bottom: 8px;
+        }
+
+        .card-channel a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .card-channel a:hover {
+            color: #dc3545;
+        }
+
+        .card-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .stat-badge {
+            background: #e9ecef;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #555;
+        }
+
+        .stat-badge.highlight {
+            background: #dc3545;
+            color: white;
+            font-weight: 600;
+        }
+
+        .card-date {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* === Advanced Settings === */
+        .advanced-toggle {
+            font-size: 0.9rem;
+            color: #666;
+            cursor: pointer;
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .advanced-content {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .advanced-content.adv-hidden {
+            display: none;
+        }
+
+        /* === Tooltip === */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: #ddd;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            cursor: help;
+            color: #666;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .tooltip-container:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* === Loading === */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-overlay.lo-hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #dc3545;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        .loading-text {
+            font-size: 1rem;
+            color: #666;
+        }
+
+        .api-usage {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 16px;
+        }
+
+        /* === Range Slider (기간 선택) === */
+        .range-slider {
+            position: relative;
+            height: 36px;
+            margin-top: 6px;
+        }
+        .range-slider .rs-track {
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            transform: translateY(-50%);
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+        }
+        .range-slider .rs-fill {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 6px;
+            background: #dc3545;
+            border-radius: 3px;
+        }
+        .range-slider input[type=range] {
+            position: absolute;
+            top: 50%; left: 0;
+            transform: translateY(-50%);
+            width: 100%;
+            margin: 0;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            pointer-events: none;
+        }
+        .range-slider input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #dc3545;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+        .range-slider input[type=range]::-moz-range-thumb {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #dc3545;
+            cursor: pointer;
+            pointer-events: auto;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+        .rs-hints {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-top: 2px;
+        }
+        .rs-label {
+            color: #dc3545;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        /* === Progress === */
+        .progress-bar-container {
+            width: 200px;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #dc3545;
+            border-radius: 3px;
+            transition: width 0.3s;
+            width: 0%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>뜨는 유튜브 채널 찾기</h1>
+            <p>구독자 적은데 조회수 터지는 채널을 찾아드려요</p>
+        </header>
+
+        <!-- API 키 섹션 -->
+        <div class="section" id="apiKeySection">
+            <div class="section-title" onclick="toggleSection(this)">
+                API 키 설정 (처음 한 번만)
+                <span class="arrow">&#9660;</span>
+            </div>
+            <div class="section-content">
+                <div id="apiStatus" class="api-status not-saved">
+                    <span>&#9888;&#65039;</span>
+                    <span>API 키가 아직 저장되지 않았어요</span>
+                </div>
+                <div class="input-group">
+                    <label for="apiKey">YouTube API 키</label>
+                    <input type="password" id="apiKey" placeholder="AIza로 시작하는 키를 붙여넣으세요">
+                </div>
+                <button class="search-btn save-btn" id="saveKeyBtn" onclick="saveApiKey()">
+                    API 키 저장하기
+                </button>
+                <div class="advanced-toggle" onclick="toggleKeyGuide()" style="margin-top:12px;">
+                    🔑 API 키 무료로 발급받는 방법 <span id="keyGuideArrow">&#9654;</span>
+                </div>
+                <div id="keyGuideContent" class="advanced-content adv-hidden">
+                    <ol style="padding-left:20px; font-size:0.9rem; color:#555; line-height:1.9;">
+                        <li><a href="https://console.cloud.google.com/projectcreate" target="_blank">Google Cloud 콘솔</a>에 구글 계정으로 로그인하고 <b>새 프로젝트</b>를 만들어요 (이름은 아무거나, 예: youtube-finder)</li>
+                        <li><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank">YouTube Data API v3 페이지</a>에서 파란 <b>"사용"</b> 버튼을 눌러요</li>
+                        <li><a href="https://console.cloud.google.com/apis/credentials" target="_blank">사용자 인증 정보 페이지</a>에서 <b>"+ 사용자 인증 정보 만들기" → "API 키"</b>를 눌러요</li>
+                        <li>만들어진 키(AIza로 시작)를 복사해서 위 칸에 붙여넣고 저장하면 끝!</li>
+                    </ol>
+                    <p class="input-hint" style="margin-top:8px; color:#dc3545;">
+                        ⚠️ 키를 만들 때 "애플리케이션 제한 / 키 제한"을 물어보면 반드시 <b>"없음"</b> 그대로 두세요.
+                        웹사이트 제한을 걸면 이 도구에서 키가 작동하지 않아요.
+                    </p>
+                    <p class="input-hint" style="margin-top:8px;">
+                        완전 무료예요. 하루 10,000 할당량이 주어지고(키워드 검색 약 100회 분량),
+                        매일 오후 4시(한국시간)에 다시 채워져요.
+                        키는 내 컴퓨터 브라우저에만 저장되고 다른 곳으로 전송되지 않아요.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 탭 네비게이션 -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="keyword" onclick="switchTab('keyword')">
+                키워드 검색
+            </button>
+            <button class="tab-btn" data-tab="channel" onclick="switchTab('channel')">
+                채널 모니터링
+            </button>
+        </div>
+
+        <!-- ===================== -->
+        <!-- 탭 1: 키워드 검색     -->
+        <!-- ===================== -->
+        <div id="tab-keyword" class="tab-panel active">
+            <div class="section">
+                <div class="section-title">검색 조건</div>
+                <div class="section-content">
+                    <div class="input-group autocomplete-wrapper">
+                        <label for="keyword">검색 키워드</label>
+                        <input type="text" id="keyword" placeholder="예: 부업, 주식, 다이어트, 영어공부" autocomplete="off">
+                        <ul id="autocompleteList" class="autocomplete-list ac-hidden"></ul>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <label>영상 길이 <span id="durationLabel" class="rs-label"></span></label>
+                            <div class="range-slider">
+                                <div class="rs-track"></div>
+                                <div class="rs-fill" id="durationFill"></div>
+                                <input type="range" id="durationFrom">
+                                <input type="range" id="durationTo">
+                            </div>
+                            <div class="rs-hints"><span>0분</span><span>무제한</span></div>
+                        </div>
+                        <div class="input-group">
+                            <label for="region">국가/언어</label>
+                            <select id="region">
+                                <option value="KR">한국어</option>
+                                <option value="US">영어 (미국)</option>
+                                <option value="JP">일본어</option>
+                                <option value="ALL">전체</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="sortOrder">
+                            정렬 기준
+                            <span class="tooltip-container">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">조회수순: 많이 본 영상 위주 (대형 채널 쏠림) · 관련성순: 키워드 적합도 위주 (중소 채널 발굴에 유리)</span>
+                            </span>
+                        </label>
+                        <select id="sortOrder">
+                            <option value="viewCount" selected>조회수 높은 순</option>
+                            <option value="relevance">관련성 순</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="period">기간</label>
+                        <select id="period">
+                            <option value="7">최근 7일</option>
+                            <option value="14" selected>최근 14일</option>
+                            <option value="30">최근 30일</option>
+                            <option value="90">최근 90일</option>
+                        </select>
+                    </div>
+
+                    <!-- 고급 설정 -->
+                    <div class="advanced-toggle" onclick="toggleAdvanced()">
+                        고급 설정 <span id="advancedArrow">&#9654;</span>
+                    </div>
+                    <div id="advancedContent" class="advanced-content adv-hidden">
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label for="minViews">
+                                    최소 조회수
+                                    <span class="tooltip-container">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">이 수치 이상 조회된 영상만 표시해요</span>
+                                    </span>
+                                </label>
+                                <input type="number" id="minViews" value="10000" min="0">
+                            </div>
+                            <div class="input-group">
+                                <label for="maxSubs">
+                                    최대 구독자
+                                    <span class="tooltip-container">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">이 수치 이하 구독자를 가진 채널만 표시해요</span>
+                                    </span>
+                                </label>
+                                <input type="number" id="maxSubs" value="100000" min="0">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="minEfficiency">
+                                최소 효율
+                                <span class="tooltip-container">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">효율 = 조회수 / 구독자. 1.0이면 구독자 수만큼 조회됨</span>
+                                </span>
+                            </label>
+                            <input type="number" id="minEfficiency" value="1.0" min="0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="searchBtn" class="search-btn" onclick="searchKeyword()">
+                채널 찾기
+            </button>
+
+            <div id="keywordResults"></div>
+            <div id="keywordApiUsage" class="api-usage"></div>
+        </div>
+
+        <!-- ===================== -->
+        <!-- 탭 2: 채널 모니터링   -->
+        <!-- ===================== -->
+        <div id="tab-channel" class="tab-panel">
+            <!-- 폴더 관리 -->
+            <div class="section">
+                <div class="section-title">폴더 관리</div>
+                <div class="section-content">
+                    <p class="input-hint" style="margin-bottom:12px;">
+                        폴더와 채널은 이 브라우저(내 컴퓨터)에만 저장돼요.
+                        다른 컴퓨터나 브라우저로 옮길 땐 아래 백업 버튼을 쓰세요.
+                    </p>
+                    <div class="folder-add-row">
+                        <input type="text" id="newFolderName" placeholder="새 폴더 이름 (예: 경제, 뷰티)" onkeydown="if(event.key==='Enter')createFolder()">
+                        <button class="btn-small btn-primary" onclick="createFolder()">추가</button>
+                    </div>
+                    <button class="btn-small" style="width:100%; background:#6f42c1; color:white; margin-bottom:12px;" onclick="loadYadamPreset()">
+                        🏯 야담 채널 102개 한번에 불러오기 (구독 8 + 발굴 58 + 신규 36)
+                    </button>
+                    <button class="btn-small" style="width:100%; background:#0d6efd; color:white; margin-bottom:12px;" onclick="loadEconomyPreset()">
+                        📈 경제학 채널 65개 한번에 불러오기 (요청 6 + 발굴 59, 롱폼 채널만)
+                    </button>
+                    <div style="display:flex; gap:8px; margin-bottom:12px;">
+                        <button class="btn-small" style="flex:1; background:#f1f3f5; color:#555;" onclick="exportBackup()">📤 백업 파일로 내보내기</button>
+                        <button class="btn-small" style="flex:1; background:#f1f3f5; color:#555;" onclick="importBackup()">📥 백업 파일 불러오기</button>
+                    </div>
+                    <input type="file" id="backupFileInput" accept=".json,application/json" style="display:none" onchange="handleBackupFile(event)">
+                    <div id="folderList" class="folder-list">
+                        <div class="empty-state">폴더를 만들어 채널을 관리해보세요</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 채널 추가 (폴더 선택 시 표시) -->
+            <div id="channelAddSection" class="section panel-hidden">
+                <div class="section-title">
+                    <span id="selectedFolderTitle">채널 추가</span>
+                </div>
+                <div class="section-content">
+                    <div class="channel-add-row">
+                        <input type="text" id="channelInput" placeholder="채널 URL 또는 @핸들 (예: @syukaworld)" onkeydown="if(event.key==='Enter')addChannel()">
+                        <button class="btn-small btn-primary" id="addChannelBtn" onclick="addChannel()">추가</button>
+                    </div>
+                    <p class="input-hint" style="margin-top:-8px; margin-bottom:12px;">
+                        @핸들, youtube.com/@핸들, youtube.com/channel/UC... 지원 ·
+                        채널 이름으로도 검색되지만 할당량을 많이 쓰니(1회당 100) @핸들 입력을 추천해요
+                    </p>
+                    <div class="advanced-toggle" onclick="toggleBulkAdd()" style="margin-bottom:8px;">
+                        여러 채널 한번에 추가 <span id="bulkArrow">&#9654;</span>
+                    </div>
+                    <div id="bulkAddContent" class="advanced-content adv-hidden" style="border-top:none; margin-top:0; padding-top:0;">
+                        <textarea id="bulkChannelInput" rows="5" placeholder="한 줄에 하나씩 붙여넣으세요&#10;예)&#10;@syukaworld&#10;https://www.youtube.com/channel/UC...&#10;채널이름" style="width:100%; padding:12px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem; font-family:inherit; resize:vertical;"></textarea>
+                        <button class="btn-small btn-primary" id="bulkAddBtn" onclick="addChannelsBulk()" style="width:100%; margin-top:8px;">한꺼번에 추가</button>
+                    </div>
+                    <div class="advanced-toggle" id="channelListToggle" onclick="toggleChannelList()" style="margin-bottom:8px;">
+                        채널 목록 <span id="channelListArrow">&#9654;</span>
+                    </div>
+                    <div id="channelList" class="channel-list" style="display:none;">
+                        <div class="empty-state">채널을 추가해보세요</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 분석 설정 (채널 있을 때 표시) -->
+            <div id="analysisSection" class="section panel-hidden">
+                <div class="section-title">분석 설정</div>
+                <div class="section-content">
+                    <div class="grid-2">
+                        <div class="input-group">
+                            <label for="analysisPeriod">기간</label>
+                            <select id="analysisPeriod">
+                                <option value="7">최근 7일</option>
+                                <option value="14" selected>최근 14일</option>
+                                <option value="30">최근 30일</option>
+                                <option value="90">최근 90일</option>
+                                <option value="365">최근 1년</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="analysisMinViews">최소 조회수</label>
+                            <input type="number" id="analysisMinViews" value="1000" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="analyzeBtn" class="search-btn panel-hidden" onclick="analyzeChannels()">
+                분석 시작
+            </button>
+
+            <div id="channelResults"></div>
+            <div id="channelApiUsage" class="api-usage"></div>
+        </div>
+
+        <footer style="text-align:center; margin-top:30px; color:#bbb; font-size:0.8rem;">
+            뜨는 유튜브 채널 찾기 · 수강생 배포판 v1.0 (2026-08)
+        </footer>
+    </div>
+
+    <!-- 로딩 오버레이 -->
+    <div id="loadingOverlay" class="loading-overlay lo-hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">처리 중이에요...</div>
+        <div class="progress-bar-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        // ===========================
+        // Constants & State
+        // ===========================
+        const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
+        const FOLDERS_STORAGE_KEY = 'youtube_folders';
+        const REGION_MAP = {
+            'KR': { regionCode: 'KR', relevanceLanguage: 'ko' },
+            'US': { regionCode: 'US', relevanceLanguage: 'en' },
+            'JP': { regionCode: 'JP', relevanceLanguage: 'ja' },
+            'ALL': { regionCode: '', relevanceLanguage: '' }
+        };
+
+        // Autocomplete state
+        let autocompleteTimer = null;
+        let isComposing = false;
+        let autocompleteIndex = -1;
+        let currentSuggestions = [];
+
+        // Channel monitoring state (이 브라우저 localStorage에 저장)
+        let folders = [];
+        let selectedFolderId = null;
+
+        // ===========================
+        // 폴더/채널 저장 (localStorage)
+        // ===========================
+        function loadFolders() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(FOLDERS_STORAGE_KEY) || '[]');
+                folders = Array.isArray(saved) ? saved : [];
+            } catch (e) {
+                folders = [];
+            }
+            folders.forEach(f => {
+                if (!f.id) f.id = f.name;
+                if (!Array.isArray(f.channels)) f.channels = [];
+            });
+        }
+
+        function saveFolders() {
+            localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(folders));
+        }
+
+        function refreshChannelTab() {
+            renderFolders();
+            renderChannels();
+            updateAnalysisVisibility();
+        }
+
+        // ===========================
+        // Init
+        // ===========================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadApiKey();
+            setupAutocomplete();
+            setupDurationSlider();
+            loadFolders();
+            refreshChannelTab();
+        });
+
+        // ===========================
+        // Tab Navigation
+        // ===========================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
+            });
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.toggle('active', panel.id === `tab-${tabName}`);
+            });
+            if (tabName === 'channel') {
+                refreshChannelTab();
+            }
+        }
+
+        // ===========================
+        // API Key
+        // ===========================
+        function loadApiKey() {
+            const savedKey = localStorage.getItem('youtube_api_key');
+            if (savedKey) {
+                document.getElementById('apiKey').value = savedKey;
+                updateApiStatus(true);
+            }
+        }
+
+        async function saveApiKey() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) { alert('API 키를 입력해주세요'); return; }
+            const btn = document.getElementById('saveKeyBtn');
+            btn.disabled = true;
+            btn.textContent = '키 확인 중...';
+            try {
+                // 할당량 1짜리 테스트 호출로 키가 실제 동작하는지 확인하고 저장
+                await fetchYouTubeAPI('channels', { part: 'id', id: 'UC_x5XG1OV2P6uZZ5FSM9Ttw', key: apiKey });
+                localStorage.setItem('youtube_api_key', apiKey);
+                updateApiStatus(true);
+                alert('API 키가 정상 작동해요! 저장했습니다.');
+            } catch (e) {
+                alert('키를 저장하지 않았어요.\n\n' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'API 키 저장하기';
+            }
+        }
+
+        function updateApiStatus(saved) {
+            const el = document.getElementById('apiStatus');
+            if (saved) {
+                el.className = 'api-status';
+                el.innerHTML = '<span>&#10004;&#65039;</span><span>API 키가 저장되어 있어요</span>';
+            } else {
+                el.className = 'api-status not-saved';
+                el.innerHTML = '<span>&#9888;&#65039;</span><span>API 키가 아직 저장되지 않았어요</span>';
+            }
+        }
+
+        // ===========================
+        // Section Toggles
+        // ===========================
+        function toggleSection(titleEl) {
+            titleEl.classList.toggle('collapsed');
+            const content = titleEl.nextElementSibling;
+            content.classList.toggle('hidden');
+        }
+
+        function toggleAdvanced() {
+            const content = document.getElementById('advancedContent');
+            const arrow = document.getElementById('advancedArrow');
+            content.classList.toggle('adv-hidden');
+            arrow.textContent = content.classList.contains('adv-hidden') ? '\u25B6' : '\u25BC';
+        }
+
+        function toggleKeyGuide() {
+            const content = document.getElementById('keyGuideContent');
+            const arrow = document.getElementById('keyGuideArrow');
+            content.classList.toggle('adv-hidden');
+            arrow.textContent = content.classList.contains('adv-hidden') ? '\u25B6' : '\u25BC';
+        }
+
+        // ===========================
+        // \uC601\uC0C1 \uAE38\uC774 \uBC94\uC704 \uC2AC\uB77C\uC774\uB354
+        // ===========================
+        // 0~150\uBD84 + \uC624\uB978\uCABD \uB05D(151)\uC740 "\uBB34\uC81C\uD55C". maxMin\uC774 null\uC774\uBA74 \uC0C1\uD55C \uC5C6\uC74C.
+        const DURATION_SLIDER_MAX = 151;
+        let durationRange = { minMin: 4, maxMin: 20 };
+
+        function setupDurationSlider() {
+            const fromEl = document.getElementById('durationFrom');
+            const toEl = document.getElementById('durationTo');
+            const fillEl = document.getElementById('durationFill');
+            const labelEl = document.getElementById('durationLabel');
+            fromEl.min = toEl.min = 0;
+            fromEl.max = toEl.max = DURATION_SLIDER_MAX;
+            fromEl.step = toEl.step = 1;
+            fromEl.value = 4;
+            toEl.value = 20;
+
+            function update(active) {
+                let a = parseInt(fromEl.value), b = parseInt(toEl.value);
+                // \uB450 \uD578\uB4E4\uC774 \uACB9\uCE58\uC9C0 \uC54A\uAC8C \uCD5C\uC18C 1\uBD84 \uAC04\uACA9 \uC720\uC9C0
+                if (a >= b) {
+                    if (active === fromEl) { a = Math.min(a, DURATION_SLIDER_MAX - 1); b = a + 1; toEl.value = b; fromEl.value = a; }
+                    else { b = Math.max(b, 1); a = b - 1; fromEl.value = a; toEl.value = b; }
+                }
+                fillEl.style.left = (a / DURATION_SLIDER_MAX * 100) + '%';
+                fillEl.style.width = ((b - a) / DURATION_SLIDER_MAX * 100) + '%';
+                durationRange = { minMin: a, maxMin: b >= DURATION_SLIDER_MAX ? null : b };
+                labelEl.textContent = durationRangeText();
+            }
+            fromEl.addEventListener('input', () => update(fromEl));
+            toEl.addEventListener('input', () => update(toEl));
+            update();
+        }
+
+        function durationRangeText() {
+            const { minMin, maxMin } = durationRange;
+            return `${minMin}\uBD84 ~ ${maxMin === null ? '\uBB34\uC81C\uD55C' : maxMin + '\uBD84'}`;
+        }
+
+        // ===========================
+        // Utility Functions
+        // ===========================
+        function formatNumber(num) {
+            if (num >= 100000000) return (num / 100000000).toFixed(1).replace(/\.0$/, '') + '억';
+            if (num >= 10000) return (num / 10000).toFixed(1).replace(/\.0$/, '') + '만';
+            if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + '천';
+            return num.toString();
+        }
+
+        function parseDuration(iso) {
+            if (!iso) return 0;
+            const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+            if (!m) return 0;
+            return (parseInt(m[1]) || 0) * 3600 + (parseInt(m[2]) || 0) * 60 + (parseInt(m[3]) || 0);
+        }
+
+        function formatDuration(sec) {
+            if (!sec) return '';
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            if (h > 0) return `${h}시간 ${m}분`;
+            if (m > 0) return `${m}분 ${s}초`;
+            return `${s}초`;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+            if (diffDays === 0) return '오늘';
+            if (diffDays === 1) return '어제';
+            if (diffDays < 7) return `${diffDays}일 전`;
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)}주 전`;
+            return `${Math.floor(diffDays / 30)}개월 전`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 구글이 주는 영어 에러를 알기 쉬운 한글 안내로 변환
+        function friendlyApiError(message) {
+            const msg = message || '';
+            if (/quota/i.test(msg)) return '오늘의 무료 API 할당량을 다 썼어요. 매일 오후 4시(한국시간)에 다시 채워지니 그때 시도해주세요.';
+            if (/API key not valid|keyInvalid|API_KEY_INVALID/i.test(msg)) return 'API 키가 올바르지 않아요. 맨 위 [API 키 설정]에서 키를 다시 확인해주세요.';
+            if (/not been used|is disabled|accessNotConfigured/i.test(msg)) return 'YouTube Data API v3가 아직 켜져 있지 않아요. 발급 가이드 2번의 "사용" 버튼을 눌렀는지 확인해주세요.';
+            if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) return '인터넷 연결을 확인해주세요.';
+            return msg;
+        }
+
+        async function fetchYouTubeAPI(endpoint, params) {
+            const url = new URL(`${YOUTUBE_API_BASE}/${endpoint}`);
+            Object.entries(params).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== '') {
+                    url.searchParams.append(key, value);
+                }
+            });
+            let data;
+            try {
+                const response = await fetch(url);
+                data = await response.json();
+            } catch (e) {
+                throw new Error(friendlyApiError(e.message));
+            }
+            if (data.error) throw new Error(friendlyApiError(data.error.message));
+            return data;
+        }
+
+        // ===========================
+        // Autocomplete (YouTube Suggest API)
+        // ===========================
+        function setupAutocomplete() {
+            const input = document.getElementById('keyword');
+
+            input.addEventListener('compositionstart', () => { isComposing = true; });
+            input.addEventListener('compositionend', () => {
+                isComposing = false;
+                handleAutocompleteInput();
+            });
+            input.addEventListener('input', () => {
+                if (!isComposing) handleAutocompleteInput();
+            });
+            input.addEventListener('keydown', handleAutocompleteKeydown);
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.autocomplete-wrapper')) hideAutocomplete();
+            });
+        }
+
+        function handleAutocompleteInput() {
+            clearTimeout(autocompleteTimer);
+            const query = document.getElementById('keyword').value.trim();
+            if (query.length < 1) { hideAutocomplete(); return; }
+            autocompleteTimer = setTimeout(() => fetchSuggestions(query), 300);
+        }
+
+        function fetchSuggestions(query) {
+            const url = `https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q=${encodeURIComponent(query)}`;
+            fetch(url)
+                .then(res => res.json())
+                .then(data => showAutocomplete(data[1] || []))
+                .catch(() => fetchSuggestionsJSONP(query));
+        }
+
+        function fetchSuggestionsJSONP(query) {
+            const cbName = '_yt_ac_' + Date.now();
+            window[cbName] = (data) => {
+                const suggestions = (data[1] || []).map(item => typeof item === 'string' ? item : item[0]);
+                showAutocomplete(suggestions);
+                delete window[cbName];
+                if (script.parentNode) script.parentNode.removeChild(script);
+            };
+            const script = document.createElement('script');
+            script.src = `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(query)}&callback=${cbName}`;
+            script.onerror = () => { delete window[cbName]; hideAutocomplete(); };
+            document.head.appendChild(script);
+        }
+
+        function showAutocomplete(suggestions) {
+            const list = document.getElementById('autocompleteList');
+            currentSuggestions = suggestions;
+            autocompleteIndex = -1;
+            if (suggestions.length === 0) { hideAutocomplete(); return; }
+            list.innerHTML = suggestions.map((s, i) =>
+                `<li data-index="${i}" onmousedown="selectSuggestion(${i})">${escapeHtml(s)}</li>`
+            ).join('');
+            list.classList.remove('ac-hidden');
+        }
+
+        function hideAutocomplete() {
+            document.getElementById('autocompleteList').classList.add('ac-hidden');
+            autocompleteIndex = -1;
+            currentSuggestions = [];
+        }
+
+        function selectSuggestion(index) {
+            if (currentSuggestions[index]) {
+                document.getElementById('keyword').value = currentSuggestions[index];
+                hideAutocomplete();
+            }
+        }
+
+        function handleAutocompleteKeydown(e) {
+            const list = document.getElementById('autocompleteList');
+            if (list.classList.contains('ac-hidden')) return;
+            const items = list.querySelectorAll('li');
+            if (items.length === 0) return;
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                autocompleteIndex = Math.min(autocompleteIndex + 1, items.length - 1);
+                updateAutocompleteHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                autocompleteIndex = Math.max(autocompleteIndex - 1, -1);
+                updateAutocompleteHighlight(items);
+            } else if (e.key === 'Enter' && autocompleteIndex >= 0) {
+                e.preventDefault();
+                selectSuggestion(autocompleteIndex);
+            } else if (e.key === 'Escape') {
+                hideAutocomplete();
+            }
+        }
+
+        function updateAutocompleteHighlight(items) {
+            items.forEach((item, i) => item.classList.toggle('active', i === autocompleteIndex));
+            if (autocompleteIndex >= 0 && currentSuggestions[autocompleteIndex]) {
+                document.getElementById('keyword').value = currentSuggestions[autocompleteIndex];
+            }
+        }
+
+        // ===========================
+        // Keyword Search (기존 기능)
+        // ===========================
+        async function searchKeyword() {
+            const apiKey = localStorage.getItem('youtube_api_key');
+            const keyword = document.getElementById('keyword').value.trim();
+
+            if (!apiKey) { showError('keywordResults', 'API 키를 먼저 입력해주세요 (맨 위 API 키 설정)'); return; }
+            if (!keyword) { showError('keywordResults', '검색 키워드를 입력해주세요'); return; }
+
+            setLoading(true, '채널을 찾고 있어요...');
+
+            try {
+                const region = document.getElementById('region').value;
+                const order = document.getElementById('sortOrder').value;
+                const periodDays = parseInt(document.getElementById('period').value);
+                const { minMin, maxMin } = durationRange;
+                const minSec = minMin * 60;
+                const maxSec = maxMin === null ? Infinity : maxMin * 60;
+                const minViews = parseInt(document.getElementById('minViews').value) || 0;
+                const maxSubs = parseInt(document.getElementById('maxSubs').value) || Infinity;
+                const minEfficiency = parseFloat(document.getElementById('minEfficiency').value) || 0;
+                const regionConfig = REGION_MAP[region];
+
+                const publishedAfter = new Date();
+                publishedAfter.setDate(publishedAfter.getDate() - periodDays);
+
+                const baseParams = {
+                    part: 'snippet',
+                    q: keyword,
+                    type: 'video',
+                    order: order,
+                    maxResults: '50',
+                    publishedAfter: publishedAfter.toISOString(),
+                    key: apiKey
+                };
+                if (regionConfig.regionCode) baseParams.regionCode = regionConfig.regionCode;
+                if (regionConfig.relevanceLanguage) baseParams.relevanceLanguage = regionConfig.relevanceLanguage;
+
+                // 길이 슬라이더 범위와 겹치는 API 길이 단계(4분 미만/4~20분/20분 초과)만 골라
+                // 단계별로 나눠 검색한다. 예: 11~44분 → "4~20분" 검색 + "20분 초과" 검색 병행.
+                // 세 단계 모두 겹치면(예: 0분~30분) 전체 검색 하나로 충분.
+                const buckets = [];
+                if (minSec < 240) buckets.push('short');
+                if (maxSec > 240 && minSec < 1200) buckets.push('medium');
+                if (maxSec > 1200) buckets.push('long');
+                const streams = (buckets.length === 0 || buckets.length === 3) ? [null] : buckets;
+                const streamStates = streams.map(d => ({ dur: d, token: '', done: false }));
+
+                // 필터 통과 결과가 TARGET개 될 때까지 최대 MAX_SEARCHES번 검색 (1번당 할당량 100)
+                const TARGET = 12, MAX_SEARCHES = 3;
+                let searches = 0, statsCalls = 0, scanned = 0;
+                let exViews = 0, exSubs = 0, exEff = 0, exDur = 0;
+                const seenVideoIds = new Set();
+                let results = [];
+
+                outer:
+                while (searches < MAX_SEARCHES && streamStates.some(s => !s.done)) {
+                    for (const s of streamStates) {
+                        if (s.done) continue;
+                        if (searches >= MAX_SEARCHES || results.length >= TARGET) break outer;
+                        setProgress(searches / MAX_SEARCHES * 90,
+                            `검색 ${searches + 1}번째 호출 중... (현재 ${results.length}개 통과)`);
+                        const params = Object.assign({}, baseParams);
+                        if (s.dur) params.videoDuration = s.dur;
+                        if (s.token) params.pageToken = s.token;
+                        const searchData = await fetchYouTubeAPI('search', params);
+                        searches++;
+                        s.token = searchData.nextPageToken || '';
+                        if (!s.token) s.done = true;
+
+                        const items = (searchData.items || []).filter(it =>
+                            it.id?.videoId && !seenVideoIds.has(it.id.videoId));
+                        items.forEach(it => seenVideoIds.add(it.id.videoId));
+
+                    if (items.length > 0) {
+                        const videoIds = items.map(item => item.id.videoId).join(',');
+                        const videoStats = await fetchYouTubeAPI('videos',
+                            { part: 'statistics,contentDetails', id: videoIds, key: apiKey });
+                        const channelIds = [...new Set(items.map(item => item.snippet.channelId))].join(',');
+                        const channelStats = await fetchYouTubeAPI('channels',
+                            { part: 'statistics', id: channelIds, key: apiKey });
+                        statsCalls += 2;
+
+                        const videoStatsMap = {};
+                        videoStats.items.forEach(item => { videoStatsMap[item.id] = item; });
+                        const channelStatsMap = {};
+                        channelStats.items.forEach(item => { channelStatsMap[item.id] = item.statistics; });
+
+                        items.forEach(item => {
+                            const v = videoStatsMap[item.id.videoId] || {};
+                            const vs = v.statistics || {};
+                            const cs = channelStatsMap[item.snippet.channelId] || {};
+                            const viewCount = parseInt(vs.viewCount) || 0;
+                            const subscriberCount = parseInt(cs.subscriberCount) || 0;
+                            const efficiency = subscriberCount > 0 ? viewCount / subscriberCount : 0;
+                            const durationSec = parseDuration(v.contentDetails?.duration);
+                            scanned++;
+                            if (durationSec < minSec || durationSec > maxSec) { exDur++; return; }
+                            if (viewCount < minViews) { exViews++; return; }
+                            if (subscriberCount > maxSubs) { exSubs++; return; }
+                            if (efficiency < minEfficiency) { exEff++; return; }
+                            results.push({
+                                videoId: item.id.videoId,
+                                title: item.snippet.title,
+                                thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
+                                channelId: item.snippet.channelId,
+                                channelTitle: item.snippet.channelTitle,
+                                publishedAt: item.snippet.publishedAt,
+                                viewCount,
+                                likeCount: parseInt(vs.likeCount) || 0,
+                                commentCount: parseInt(vs.commentCount) || 0,
+                                subscriberCount, efficiency, durationSec
+                            });
+                        });
+                    }
+
+                    }
+                }
+
+                if (scanned === 0) {
+                    showError('keywordResults', '검색 결과가 없어요. 다른 키워드나 기간으로 시도해보세요.');
+                    document.getElementById('keywordApiUsage').textContent =
+                        `기간 최근 ${periodDays}일 | API 할당량 약 ${searches * 100 + statsCalls} 사용 (하루 10,000)`;
+                    return;
+                }
+
+                results.sort((a, b) => b.efficiency - a.efficiency);
+                displayResults('keywordResults', results);
+
+                let usage = `${scanned}개 영상 검토 → ${results.length}개 표시`;
+                const excludedParts = [];
+                if (exDur) excludedParts.push(`길이 범위 밖 ${exDur}`);
+                if (exViews) excludedParts.push(`조회수 미달 ${exViews}`);
+                if (exSubs) excludedParts.push(`구독자 초과 ${exSubs}`);
+                if (exEff) excludedParts.push(`효율 미달 ${exEff}`);
+                if (excludedParts.length) usage += ` (제외: ${excludedParts.join(' · ')})`;
+                usage += ` | 최근 ${periodDays}일 · 길이 ${durationRangeText()} · 검색 ${searches}회 · API 할당량 약 ${searches * 100 + statsCalls} 사용 (하루 10,000)`;
+                document.getElementById('keywordApiUsage').textContent = usage;
+
+            } catch (error) {
+                console.error(error);
+                showError('keywordResults', error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // ===========================
+        // Results Display (공통)
+        // ===========================
+        function displayResults(containerId, results) {
+            const el = document.getElementById(containerId);
+            if (results.length === 0) {
+                el.innerHTML = '<div class="results-header">조건에 맞는 영상이 없어요. 필터를 조정해보세요.</div>';
+                return;
+            }
+
+            let html = `<div class="results-header success">${results.length}개 영상을 찾았어요! (효율 순 정렬)</div>`;
+            results.forEach(item => {
+                html += `
+                    <div class="card">
+                        <div class="card-inner">
+                            <div class="card-thumbnail">
+                                <a href="https://www.youtube.com/watch?v=${item.videoId}" target="_blank">
+                                    <img src="${item.thumbnail}" alt="${escapeHtml(item.title)}">
+                                </a>
+                            </div>
+                            <div class="card-content">
+                                <div class="card-title">
+                                    <a href="https://www.youtube.com/watch?v=${item.videoId}" target="_blank">
+                                        ${escapeHtml(item.title)}
+                                    </a>
+                                </div>
+                                <div class="card-channel">
+                                    <a href="https://www.youtube.com/channel/${item.channelId}" target="_blank">
+                                        ${escapeHtml(item.channelTitle)}
+                                    </a>
+                                </div>
+                                <div class="card-stats">
+                                    <span class="stat-badge highlight">효율 ${item.efficiency.toFixed(1)}배</span>
+                                    <span class="stat-badge">조회수 ${formatNumber(item.viewCount)}</span>
+                                    <span class="stat-badge">구독자 ${formatNumber(item.subscriberCount)}</span>
+                                </div>
+                                <div class="card-stats">
+                                    <span class="stat-badge">좋아요 ${formatNumber(item.likeCount)}</span>
+                                    <span class="stat-badge">댓글 ${formatNumber(item.commentCount)}</span>
+                                    ${item.durationSec ? `<span class="stat-badge">⏱ ${formatDuration(item.durationSec)}</span>` : ''}
+                                </div>
+                                <div class="card-date">${formatDate(item.publishedAt)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            el.innerHTML = html;
+        }
+
+        function showError(containerId, message) {
+            document.getElementById(containerId).innerHTML = `
+                <div class="results-header error">&#9888;&#65039; ${message}</div>
+            `;
+        }
+
+        // ===========================
+        // Loading
+        // ===========================
+        function setLoading(isLoading, message) {
+            const searchBtn = document.getElementById('searchBtn');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = overlay.querySelector('.loading-text');
+            const progressBar = document.getElementById('progressBar');
+
+            if (isLoading) {
+                searchBtn.disabled = true;
+                searchBtn.innerHTML = '<div class="spinner"></div> 검색 중...';
+                analyzeBtn.disabled = true;
+                analyzeBtn.innerHTML = '<div class="spinner"></div> 분석 중...';
+                loadingText.textContent = message || '처리 중이에요...';
+                progressBar.style.width = '0%';
+                overlay.classList.remove('lo-hidden');
+            } else {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '채널 찾기';
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = '분석 시작';
+                overlay.classList.add('lo-hidden');
+            }
+        }
+
+        function setProgress(percent, message) {
+            const progressBar = document.getElementById('progressBar');
+            const loadingText = document.querySelector('.loading-text');
+            progressBar.style.width = percent + '%';
+            if (message) loadingText.textContent = message;
+        }
+
+        // ===========================
+        // Folder Management
+        // ===========================
+        function createFolder() {
+            const input = document.getElementById('newFolderName');
+            const name = input.value.trim();
+            if (!name) { alert('폴더 이름을 입력해주세요'); return; }
+            if (folders.some(f => f.name === name)) { alert('같은 이름의 폴더가 이미 있어요'); return; }
+            folders.push({ id: name, name, channels: [] });
+            saveFolders();
+            input.value = '';
+            refreshChannelTab();
+        }
+
+        function editFolder(folderId) {
+            const folder = folders.find(f => f.id === folderId);
+            if (!folder) return;
+            const newName = prompt('새 폴더 이름을 입력하세요', folder.name);
+            if (!newName || !newName.trim() || newName.trim() === folder.name) return;
+            const trimmed = newName.trim();
+            if (folders.some(f => f.name === trimmed)) { alert('같은 이름의 폴더가 이미 있어요'); return; }
+            folder.name = trimmed;
+            folder.id = trimmed;
+            if (selectedFolderId === folderId) selectedFolderId = trimmed;
+            saveFolders();
+            refreshChannelTab();
+        }
+
+        function deleteFolder(folderId) {
+            const folder = folders.find(f => f.id === folderId);
+            if (!folder) return;
+            if (!confirm(`"${folder.name}" 폴더를 삭제하시겠어요?\n포함된 ${folder.channels.length}개 채널 목록도 함께 삭제돼요.`)) return;
+            folders = folders.filter(f => f.id !== folderId);
+            if (selectedFolderId === folderId) selectedFolderId = null;
+            saveFolders();
+            refreshChannelTab();
+        }
+
+        function selectFolder(folderId) {
+            selectedFolderId = (selectedFolderId === folderId) ? null : folderId;
+            renderFolders();
+            renderChannels();
+            updateAnalysisVisibility();
+        }
+
+        function renderFolders() {
+            const container = document.getElementById('folderList');
+            if (folders.length === 0) {
+                container.innerHTML = '<div class="empty-state">폴더를 만들어 채널을 관리해보세요</div>';
+                return;
+            }
+            container.innerHTML = folders.map(folder => `
+                <div class="folder-item ${selectedFolderId === folder.id ? 'selected' : ''}" data-folder-id="${folder.id}">
+                    <div class="folder-header" onclick="selectFolder('${folder.id}')">
+                        <span class="folder-name">${escapeHtml(folder.name)}</span>
+                        <span class="folder-count">${folder.channels.length}개 채널</span>
+                        <div class="folder-actions">
+                            <button class="btn-icon" onclick="event.stopPropagation(); editFolder('${folder.id}')" title="이름 수정">&#9998;&#65039;</button>
+                            <button class="btn-icon" onclick="event.stopPropagation(); deleteFolder('${folder.id}')" title="삭제">&#128465;&#65039;</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===========================
+        // Channel Management
+        // ===========================
+        let channelListCollapsed = true;
+
+        function toggleChannelList() {
+            channelListCollapsed = !channelListCollapsed;
+            updateChannelListVisibility();
+        }
+
+        function updateChannelListVisibility() {
+            document.getElementById('channelList').style.display = channelListCollapsed ? 'none' : '';
+            document.getElementById('channelListArrow').innerHTML = channelListCollapsed ? '&#9654;' : '&#9660;';
+        }
+
+        function renderChannels() {
+            const section = document.getElementById('channelAddSection');
+            const list = document.getElementById('channelList');
+            const title = document.getElementById('selectedFolderTitle');
+            const toggle = document.getElementById('channelListToggle');
+
+            if (!selectedFolderId) {
+                section.classList.add('panel-hidden');
+                return;
+            }
+
+            const folder = folders.find(f => f.id === selectedFolderId);
+            if (!folder) return;
+
+            section.classList.remove('panel-hidden');
+            title.textContent = `"${folder.name}" 채널 관리`;
+
+            if (folder.channels.length === 0) {
+                toggle.style.display = 'none';
+                list.style.display = '';
+                list.innerHTML = '<div class="empty-state">채널을 추가해보세요</div>';
+                return;
+            }
+
+            toggle.style.display = '';
+            toggle.childNodes[0].textContent = `채널 ${folder.channels.length}개 목록 `;
+            updateChannelListVisibility();
+
+            list.innerHTML = folder.channels.map(ch => `
+                <div class="channel-item" data-channel-id="${ch.id}">
+                    <img class="channel-thumb" src="${ch.thumbnail || ''}" alt="${escapeHtml(ch.title)}"
+                         onerror="this.style.background='#ddd'; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><rect fill=%22%23ddd%22 width=%2240%22 height=%2240%22/></svg>'">
+                    <div class="channel-info">
+                        <a href="https://www.youtube.com/channel/${ch.id}" target="_blank" class="channel-name">${escapeHtml(ch.title)}</a>
+                        <span class="channel-subs">구독자 ${formatNumber(ch.subscriberCount || 0)}</span>
+                    </div>
+                    <button class="btn-icon" onclick="removeChannel('${selectedFolderId}', '${ch.id}')" title="삭제" style="font-size:1.1rem;">&#10005;</button>
+                </div>
+            `).join('');
+        }
+
+        function updateAnalysisVisibility() {
+            const folder = folders.find(f => f.id === selectedFolderId);
+            const hasChannels = folder && folder.channels.length > 0;
+            document.getElementById('analysisSection').classList.toggle('panel-hidden', !hasChannels);
+            document.getElementById('analyzeBtn').classList.toggle('panel-hidden', !hasChannels);
+        }
+
+        async function addChannel() {
+            const input = document.getElementById('channelInput');
+            const rawInput = input.value.trim();
+            if (!rawInput) { alert('채널 URL 또는 ID를 입력해주세요'); return; }
+            if (!selectedFolderId) { alert('폴더를 먼저 선택해주세요'); return; }
+            const apiKey = localStorage.getItem('youtube_api_key');
+            if (!apiKey) { alert('API 키를 먼저 저장해주세요 (맨 위 API 키 설정)'); return; }
+
+            const btn = document.getElementById('addChannelBtn');
+            btn.disabled = true;
+            btn.textContent = '검색 중...';
+
+            try {
+                const channelId = await resolveChannelId(rawInput, apiKey);
+                if (!channelId) throw new Error('채널을 찾지 못했어요. URL이나 @핸들을 다시 확인해주세요.');
+                const folder = folders.find(f => f.id === selectedFolderId);
+                if (folder.channels.some(ch => ch.id === channelId)) {
+                    alert('이미 이 폴더에 있는 채널이에요');
+                    return;
+                }
+                const [info] = await fetchChannelInfo([channelId], apiKey);
+                if (!info) throw new Error('채널 정보를 가져오지 못했어요');
+                folder.channels.push(info);
+                saveFolders();
+                input.value = '';
+                refreshChannelTab();
+            } catch (error) {
+                alert(`오류: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '추가';
+            }
+        }
+
+        // channels.list로 채널 제목/썸네일/구독자 조회 (50개당 할당량 1)
+        async function fetchChannelInfo(channelIds, apiKey) {
+            const found = {};
+            for (let i = 0; i < channelIds.length; i += 50) {
+                const batch = channelIds.slice(i, i + 50);
+                const data = await fetchYouTubeAPI('channels', {
+                    part: 'snippet,statistics',
+                    id: batch.join(','),
+                    maxResults: '50',
+                    key: apiKey
+                });
+                (data.items || []).forEach(item => {
+                    found[item.id] = {
+                        id: item.id,
+                        title: item.snippet.title,
+                        thumbnail: item.snippet.thumbnails?.default?.url || '',
+                        subscriberCount: parseInt(item.statistics?.subscriberCount) || 0
+                    };
+                });
+            }
+            return channelIds.map(id => found[id] || null).filter(Boolean);
+        }
+
+        async function resolveChannelId(input, apiKey) {
+            // Direct channel ID (UC + 22 chars)
+            if (/^UC[\w-]{22}$/.test(input)) return input;
+
+            // youtube.com/channel/UC...
+            let match = input.match(/youtube\.com\/channel\/(UC[\w-]{22})/);
+            if (match) return match[1];
+
+            // youtube.com/@handle
+            match = input.match(/youtube\.com\/@([\w.\-]+)/);
+            if (match) return await resolveByHandle(match[1], apiKey);
+
+            // @handle (without URL)
+            match = input.match(/^@([\w.\-]+)$/);
+            if (match) return await resolveByHandle(match[1], apiKey);
+
+            // youtube.com/c/Name or youtube.com/user/Name
+            match = input.match(/youtube\.com\/(?:c|user)\/([\w.\-]+)/);
+            if (match) return await resolveBySearch(match[1], apiKey);
+
+            // Fallback: search by name
+            return await resolveBySearch(input, apiKey);
+        }
+
+        async function resolveByHandle(handle, apiKey) {
+            try {
+                const data = await fetchYouTubeAPI('channels', {
+                    part: 'id',
+                    forHandle: handle,
+                    key: apiKey
+                });
+                if (data.items && data.items.length > 0) return data.items[0].id;
+            } catch (e) { /* fall through */ }
+            return await resolveBySearch('@' + handle, apiKey);
+        }
+
+        async function resolveBySearch(query, apiKey) {
+            if (!confirm(`"${query}"를 채널 이름으로 검색할까요?\n\n이름 검색은 할당량 100을 써요.\n(@핸들이나 채널 URL로 입력하면 1이면 돼요)`)) {
+                throw new Error('이름 검색을 취소했어요. @핸들이나 채널 URL로 입력해보세요.');
+            }
+            const data = await fetchYouTubeAPI('search', {
+                part: 'snippet',
+                q: query,
+                type: 'channel',
+                maxResults: '1',
+                key: apiKey
+            });
+            if (data.items && data.items.length > 0) return data.items[0].snippet.channelId;
+            return null;
+        }
+
+        // ===========================
+        // Bulk Add & Yadam Preset
+        // ===========================
+        function toggleBulkAdd() {
+            const content = document.getElementById('bulkAddContent');
+            const arrow = document.getElementById('bulkArrow');
+            content.classList.toggle('adv-hidden');
+            arrow.textContent = content.classList.contains('adv-hidden') ? '▶' : '▼';
+        }
+
+        async function addChannelsBulk() {
+            if (!selectedFolderId) { alert('폴더를 먼저 선택해주세요'); return; }
+            const apiKey = localStorage.getItem('youtube_api_key');
+            if (!apiKey) { alert('API 키를 먼저 저장해주세요 (맨 위 API 키 설정)'); return; }
+
+            const lines = document.getElementById('bulkChannelInput').value
+                .split('\n').map(s => s.trim()).filter(Boolean);
+            if (lines.length === 0) { alert('추가할 채널을 입력해주세요'); return; }
+
+            const btn = document.getElementById('bulkAddBtn');
+            btn.disabled = true;
+            setLoading(true, `${lines.length}개 채널을 찾는 중...`);
+
+            const folder = folders.find(f => f.id === selectedFolderId);
+            const failed = [];
+            const newIds = [];
+            let skipped = 0;
+            try {
+                for (let i = 0; i < lines.length; i++) {
+                    setProgress(Math.round(i / lines.length * 80), `채널 확인 중... (${i + 1}/${lines.length})`);
+                    try {
+                        const channelId = await resolveChannelId(lines[i], apiKey);
+                        if (!channelId) { failed.push(lines[i]); continue; }
+                        if (folder.channels.some(ch => ch.id === channelId) || newIds.includes(channelId)) {
+                            skipped++;
+                            continue;
+                        }
+                        newIds.push(channelId);
+                    } catch (e) {
+                        if (/할당량/.test(e.message)) throw e;
+                        failed.push(lines[i]);
+                    }
+                }
+                setProgress(90, '채널 정보를 가져오는 중...');
+                const infos = await fetchChannelInfo(newIds, apiKey);
+                infos.forEach(info => folder.channels.push(info));
+                saveFolders();
+                document.getElementById('bulkChannelInput').value = '';
+                refreshChannelTab();
+
+                let msg = `${infos.length}개 추가 완료`;
+                if (skipped) msg += `\n${skipped}개는 이미 있어서 건너뜀`;
+                if (failed.length) msg += `\n${failed.length}개 실패: ${failed.join(', ')}`;
+                alert(msg);
+            } catch (e) {
+                alert(`오류: ${e.message}`);
+            } finally {
+                setLoading(false);
+                btn.disabled = false;
+            }
+        }
+
+        // 내가 찾아둔 야담 트렌디 채널 58개 (구독자 적은 순)
+        const YADAM_PRESET = [
+            {id:"UC98w-QfWGojXQf6Zh4oMoog",title:"화수분야담",subscriberCount:896,thumbnail:""},
+            {id:"UC2Sbs8CSruFUQGhKXWAMzsQ",title:"야담방앗간",subscriberCount:1300,thumbnail:""},
+            {id:"UCKHHCz2yjmlnFjdkl7SAxrA",title:"야담고을",subscriberCount:2550,thumbnail:""},
+            {id:"UCGo35ehMZw72OB2dihaI_1w",title:"매화야담길",subscriberCount:2610,thumbnail:""},
+            {id:"UCfi7icDy6BbnNOqtIeli2xQ",title:"달토끼야담",subscriberCount:2650,thumbnail:""},
+            {id:"UCIPb5tnAUyWsdj4zNSq11RQ",title:"채월야담",subscriberCount:3490,thumbnail:""},
+            {id:"UCJZCMLgeE5K1IwCp3IkfLCw",title:"달빛명월야담",subscriberCount:3570,thumbnail:""},
+            {id:"UCh9mAn3AH-56_Zrh4C12mqw",title:"노을야담",subscriberCount:3790,thumbnail:""},
+            {id:"UCVMXJxXY9NB0K8EbxfxpFug",title:"천일설화 야담",subscriberCount:3930,thumbnail:""},
+            {id:"UC73zFfoYT0sh7r7NEXBtRaQ",title:"소원야담",subscriberCount:4000,thumbnail:""},
+            {id:"UCt-4gtMHr5Yq155P3ozBVXg",title:"조선야담창고",subscriberCount:4040,thumbnail:""},
+            {id:"UCv4lQoK5ZJHGVx415-NiDpQ",title:"보배야담",subscriberCount:4190,thumbnail:""},
+            {id:"UC57hZQPAAHPx7wjMBg-1bPQ",title:"야담동무",subscriberCount:4280,thumbnail:""},
+            {id:"UCgkGiGnTzi1jUVRxgMdzXIA",title:"야담이야기",subscriberCount:4620,thumbnail:""},
+            {id:"UCdx8_M0fLtYpQDnYY-ALWRg",title:"솔잎야담",subscriberCount:5450,thumbnail:""},
+            {id:"UCGRT47eVm_TIRWhcbpuGS5w",title:"한빛야담",subscriberCount:5640,thumbnail:""},
+            {id:"UCvJFSsbkUoKZfSllNb5BY_g",title:"은솔야담",subscriberCount:5770,thumbnail:""},
+            {id:"UCOlS5leCgyaHUWNWyP7UR2A",title:"소망야담",subscriberCount:5890,thumbnail:""},
+            {id:"UCi8d2XlECUswIlAgau5VQVg",title:"야담화원",subscriberCount:5910,thumbnail:""},
+            {id:"UC_Vj_8vcPsUR4ZjY7p5SusA",title:"명품야담",subscriberCount:6200,thumbnail:""},
+            {id:"UCbk1Idboh0qfQ2euy8WFmIA",title:"팔도야담방",subscriberCount:6600,thumbnail:""},
+            {id:"UCPF2zXlAOqMGjT0rMuxabBQ",title:"백제야담",subscriberCount:7320,thumbnail:""},
+            {id:"UC932jRu9zsWkJcx0TxaWgNw",title:"뒷골목 야담",subscriberCount:7510,thumbnail:""},
+            {id:"UC1fvS93pNotD7P43lATHMOg",title:"옛날이야기 보따리",subscriberCount:7650,thumbnail:""},
+            {id:"UC3Jq33v0JtmWw7PcRmye6_g",title:"야담재인",subscriberCount:8260,thumbnail:""},
+            {id:"UCn3IlbuVTSW34l-MP3RuDRQ",title:"달빛잠자리이야기",subscriberCount:8290,thumbnail:""},
+            {id:"UCyiBBQvrF1-7MjISrd7oXCg",title:"뚱이야담",subscriberCount:8430,thumbnail:""},
+            {id:"UCXhD92yun-rimvVCP6cLGhw",title:"혜뚝야담",subscriberCount:8630,thumbnail:""},
+            {id:"UCvW-efvzyTO01opeyCWSkpg",title:"달빛야담",subscriberCount:9350,thumbnail:""},
+            {id:"UCA0XlekSYQ9ZsS2-wdl0GiA",title:"시니어오픈북",subscriberCount:10100,thumbnail:""},
+            {id:"UCiTBBpBmRnR54hLXj5LtQVQ",title:"소월야담",subscriberCount:10500,thumbnail:""},
+            {id:"UCJIoGPs4zCNRKhIx_I0Oxjw",title:"복많이받으세요 야담",subscriberCount:10800,thumbnail:""},
+            {id:"UCkiulJOEQwZgFdHExnrW5YA",title:"황도야담",subscriberCount:11400,thumbnail:""},
+            {id:"UCQPhpMwrBD4UfuEjyW5-oeg",title:"조선업보록",subscriberCount:11600,thumbnail:""},
+            {id:"UCVhpoD8jZU1r98OsNNpeNWA",title:"천년전설야담사",subscriberCount:12500,thumbnail:""},
+            {id:"UCqP2ZKWY1bVXOlcffPyB9tQ",title:"조선제일야담",subscriberCount:12600,thumbnail:""},
+            {id:"UCvuVKKtIXIxffrvoLTTjcRw",title:"가인야담",subscriberCount:12900,thumbnail:""},
+            {id:"UCRQz93yV3oXKaXZfngj_diw",title:"아랫목야담꾼",subscriberCount:14400,thumbnail:""},
+            {id:"UC6XNR-mQmICyLDDDBQbpxxg",title:"조선 야담집",subscriberCount:15400,thumbnail:""},
+            {id:"UC7Dx8s1iF2SwQTOlMq5K-ig",title:"옛날이야기",subscriberCount:16200,thumbnail:""},
+            {id:"UChHZJeevxi8143JcFM43lqg",title:"퇴근길독백",subscriberCount:16300,thumbnail:""},
+            {id:"UC_5Xm81nTsHl4pfGSwdYqUw",title:"월하야담",subscriberCount:16500,thumbnail:""},
+            {id:"UC3fU_1_IHu6oUVVKUF-fq7w",title:"굿밤야담",subscriberCount:17500,thumbnail:""},
+            {id:"UCrmDMkdlnRcsAu7L9deADCQ",title:"재벌집사연극장",subscriberCount:18100,thumbnail:""},
+            {id:"UChczrPnaju9mGqxJXMGVX8Q",title:"산골야담",subscriberCount:18300,thumbnail:""},
+            {id:"UCt077dOvu2mLQN7lFTZLOOg",title:"인생대첩",subscriberCount:18300,thumbnail:""},
+            {id:"UCpzwPLTXwJAwu0wbFplcyNQ",title:"야담마을",subscriberCount:18400,thumbnail:""},
+            {id:"UCueh-e4ZWsAlZRlw9E1AapA",title:"별하의 조선야담",subscriberCount:18600,thumbnail:""},
+            {id:"UC0SB64lKf9GWMOakE6KNGEA",title:"조선 야담",subscriberCount:20600,thumbnail:""},
+            {id:"UCyvjQQbqTKeSm_fy6Sfgciw",title:"밤의설화 공식",subscriberCount:21300,thumbnail:""},
+            {id:"UC8g35mvilidLYiWVvftb93A",title:"달이야담",subscriberCount:22400,thumbnail:""},
+            {id:"UCPvs2lSeGGS4CV-vsgBPCQQ",title:"목단야담",subscriberCount:22400,thumbnail:""},
+            {id:"UCyULZWfiP27XjXxYcg6c3iA",title:"야담헌",subscriberCount:22600,thumbnail:""},
+            {id:"UCcV_SLaGHK9ifJEVv5UiMew",title:"송림야담",subscriberCount:25300,thumbnail:""},
+            {id:"UCT57FYHDidN7DREm-ItSuqA",title:"전해들은 야담",subscriberCount:32700,thumbnail:""},
+            {id:"UCIrAryWcOnjjiRCNvZ1TF6w",title:"오늘도좋은밤",subscriberCount:49900,thumbnail:""},
+            {id:"UCaApUIdlWO-BilVTBMLO8eg",title:"드라마사연",subscriberCount:57100,thumbnail:""},
+            {id:"UCJiePgRTXdUHMFIr577IB6g",title:"야담집",subscriberCount:88300,thumbnail:""},
+            // ▼ 내 구독 채널 8개
+            {id:"UCJb10-j_C3fcBmtNwHAEIXg",title:"담담소담 민담",subscriberCount:2950,thumbnail:"https://yt3.ggpht.com/H1hjdkQSGdobNsjrXd0_MZ4El9TOkFTzSbGI7Xk8CRb3OHJpou6GRY5d1VxofBGW4Ubbcw-M0g=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCeCV4n3wm1c1_TVxjpYCrXw",title:"옛날 옛적에 한국 이야기",subscriberCount:6010,thumbnail:"https://yt3.ggpht.com/DliQEKSTmtEiHtzSPowYHLRn6VbFEh50nuX_4aHDVk5OpCIxP-cQccFVHloJpB160jusRSlUuw=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCTugu3zXia_FMIvqy-BiZTg",title:"소원야담",subscriberCount:7030,thumbnail:"https://yt3.ggpht.com/Q5lWVxJ14qcbYQUNCd41bG0gCZNvIrpQdtbgQTG9vKToMtFwAyI3RywV-1r4cFhi2h-3dlReOA=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UC3FMKyCPX-Pj33e_34I1nRw",title:"손녀야담",subscriberCount:7170,thumbnail:"https://yt3.ggpht.com/ePoJr62AuVb2jzDCno7kARirHF9LPbdYyVtIqj5SJKWhGLkeRLJ9VEHTYMXasnlOCbaNoOZP4g=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCkuCZHDpOS0LqBkPUpBa5NA",title:"꼬마야담",subscriberCount:12800,thumbnail:"https://yt3.ggpht.com/Z_MvbzCKlWCqd9jNkiW0KVubt5D0KRQnuD-nJBe7dEHOgTXRhvZsrudzJfJpM3rnbZ_Xa1nIfg=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCI2uCKOkQvxEC7kzNiB68sQ",title:"파랑새야담",subscriberCount:16900,thumbnail:"https://yt3.ggpht.com/WvJPBzjb2LhifowbarIMsvFCzxN4s6OPUt9h7sM2wcDEy2hNAnHmaH0L41oWC6JtjrVLJ35FMA=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCAKHG2pWK7LmmH5PwWtbiFg",title:"조선야담꾼",subscriberCount:29200,thumbnail:"https://yt3.ggpht.com/aDGjvHkPr0t6GwGvBFAMp6CrLjGfOP8F7C8JVb83W1c7rDqYCkIComjzhxmEz4XFPWiQ144YKf0=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCNyQVIoDjRK6bSZLDLyzPlg",title:"밤마실야담",subscriberCount:31100,thumbnail:"https://yt3.ggpht.com/UePrLz_f3IZpID39yHJrew6DBxCMsbnKV4AVnKmgx4z-stD9Hf5_DS0ffelY1IgiJfbEgZJhYQ=s88-c-k-c0x00ffffff-no-rj"},
+            // ▼ 2026-07-14 신규 발굴 36개 (최근 4주 총 조회수 10만+ 활성 채널, 구독자 적은 순)
+            {id:"UC8UNzv39C_ryQW1R6tkKuaw",title:"호롱불 야담",subscriberCount:1620,thumbnail:"https://yt3.ggpht.com/qspxsT5uZqtfljBjMMp4LLbjFiFK3FpIhGrR1_kN3yrjaybTXzl4nwxCNXkCUOcL4mSxudIOLw=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCncXw1PgRaE2i9rzegd5bIg",title:"조선야화",subscriberCount:1680,thumbnail:"https://yt3.ggpht.com/VNLjRGpitj5eljmjuIpMFROm5TmnQu-M3s1ictFnIyx3aHdVrPv0hrbmEmYOFphxiLItSQL-=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCn7k7bX6iAUg-u3wCFkMXkg",title:"꽃님야담",subscriberCount:1730,thumbnail:"https://yt3.ggpht.com/ErWxH5-uqygeyUq3GlnC5KbYKitz-A5gn35fU_xqX1LZgS1O8ZBuVChpfez2Y3AQ1uyEs2eX=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCMKa_Q1RokJjexG0iTZwhAQ",title:"슬기로운야담",subscriberCount:1890,thumbnail:"https://yt3.ggpht.com/sy-f9YAMXEdj8uPnkwiYOJUf1DA4L2gzuKkpPBq3ZHZTvLdSjwV40O1HJmSNGUM-ww2r7YCA8A=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCoHh7T1gs4WDMZy0ochahQw",title:"황제야담",subscriberCount:2090,thumbnail:"https://yt3.ggpht.com/wkncUxTK5EXMhpeTpMhA5PJqCbhQOzpEf4YgZ2naiypcURZH6gS7k7X0e5eGivv7cJJRAOsO=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UC_Wc28WiZM5G4yRdFR8PU6g",title:"야담우체국",subscriberCount:2530,thumbnail:"https://yt3.ggpht.com/f0SxAGn61HW6wBu3-H8t-SGfCvcGSsez0qZto_NbdY4120mfMNzJYJ0r2kIPnqpldWW8jcDY7w=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCd_YkySRFtXxpRXqcpfd3YA",title:"잠든옛야담",subscriberCount:2700,thumbnail:"https://yt3.ggpht.com/QYCAkTn6efcSgKgJoV9PPXFEGyBjnwRyyOQv3iBOcWGDtR1_18lQsPYFKOAEJWqyABDodEd0QFg=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCks7GnJXC-K9bGCRdiZ8-IQ",title:"푸른달야담",subscriberCount:2740,thumbnail:"https://yt3.ggpht.com/C3B0Xmvc-QRujczSx39FPwodg0LR_ushlIuNU5ySw4F5mpQdVQlI3zK-0Kkup00UAgyn1sNM5w=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCyPnZwl5_CgXnBJyGon7_ug",title:"붉은실야담",subscriberCount:2770,thumbnail:"https://yt3.ggpht.com/1FJIFj2q7QxRaf9Us8YDhUCZuQ9Xb8L_ZytHONpdX8tQvan3bqihlka9rF3-26vXwkqA1DyKY1Y=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCw2fBrirkzeuup7YiwREaXQ",title:"몽이야담",subscriberCount:2910,thumbnail:"https://yt3.ggpht.com/R31vcQ6cvVVcwbsLjlvuBz8xMBJDbO_M2Fpbi3VQvGO3fgcVcrmwjzhpFIWL7cFOAOVxtIwB3w=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCO68rMW0pU_3dCNivpLStWw",title:"야담동화",subscriberCount:3120,thumbnail:"https://yt3.ggpht.com/sC622fPXz0iUyA3zmwH3GMfSYQpwR5FZlmbCZIXXhdZBdhaYn_7CG7V3EaSjOnDBk8UQm1IC=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCTPgkOX6NTxxYDTN2l-5uUQ",title:"풍림야담",subscriberCount:3190,thumbnail:"https://yt3.ggpht.com/soB57_1BGUyR_99fYpqx6BmPXMqg3ea_OJZT8CS4eu0d0DodegQJgxpX0vYX6yoQq1ajJo72=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCnhwkclmMvtHrgXBrG__zvg",title:"흔적야담",subscriberCount:3790,thumbnail:"https://yt3.ggpht.com/wE2GxGodtkH6xECelFMm2kdxD_tJQ5-33fJ92qNOvTDmtgVm3pe1rgYWg-lttT5vRrmOx594egQ=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCii14pDSmSsEFh2rDd2jLzA",title:"다복야담",subscriberCount:4310,thumbnail:"https://yt3.ggpht.com/9ffULS27LFDTnOEP-0RkdRNiYn96zwLVyqnSttVBjig1FN-XKre9y5xqeikRyNt5MhHRYwEl=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCfl0sTeMFbYPaC7q8pYBvSA",title:"민간야담",subscriberCount:4520,thumbnail:"https://yt3.ggpht.com/0F3Mq9AP_dJK3vUVm5VmeqpxNPKIuxxpal1IPufgozXhgrdv_lJr7dJPKRqGUA5JjkHWGwCs=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCHpu-1USot0uAUOGY3j3sJw",title:"별아씨야담",subscriberCount:4700,thumbnail:"https://yt3.ggpht.com/YgnGwNRlOiqe8amlsR6Uw3YQzoSMEv6ceaT0CwGL0Qpibosr-mxjYeH_DrCICUW2Ax2N0Ez0=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCkESUt1enMzteK7-lI0xVPw",title:"건하야담",subscriberCount:5010,thumbnail:"https://yt3.ggpht.com/A00ZZz9bIsmh9yFsnMR4WZqhaXXkKaZEdzgqX0v2wIUwMpQQrjk6VWdC5zzYKRD4r-iP0G4_4bU=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCWgYVelq_XSG0n7LD4-Y83A",title:"야담도서관",subscriberCount:5800,thumbnail:"https://yt3.ggpht.com/gIfQCZQxw6aRPQwo4QqQYXP8_ouVj-nSy5rJH2yxszKnrFGes7DscJ6ztlmmh35y4yxN3Ekn=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCL8h439wOom4IdeWd6RAtFg",title:"고갯길야담",subscriberCount:6880,thumbnail:"https://yt3.ggpht.com/PDkyHKKJ0kxkzHAofrp27VeLkl7Iz9865UyHgfMOoXZEPbKdgMY09KFkdUlOmwwxe1EkJDlI_w=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCS_7ap3IJBmcvrRzHYNAeBw",title:"속닥야담",subscriberCount:6880,thumbnail:"https://yt3.ggpht.com/0_7CdxJ2Hd13J6RXUCTiLPzflRcfTGybkhzHRdzdro4-j9cY6dYheoXplhTR81IMt_sy1uZLHA=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCKYth9jR1ocwDHUUoi8mXVg",title:"조선라디오",subscriberCount:6920,thumbnail:"https://yt3.ggpht.com/fi70AnI6qS_hmxB7WuY1Y8acdXVJRA_e6xuFzKD7xTIE74PzKUrd4npsEg-GfX8JG1k3Bd0YZw=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UC5E_yVeaF9GFdmMNm38AE9Q",title:"야담방송국",subscriberCount:7480,thumbnail:"https://yt3.ggpht.com/AasG7HHPq1QHTGh1gg1rVA5Cm89hN1fM3YC02trNUztx8ySx4UiiGrevooqiNOLQ5LmqUKZc9qY=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UC7ZQ31YmPBPvFC0YIyTtk8Q",title:"야담을 빚다",subscriberCount:8650,thumbnail:"https://yt3.ggpht.com/wr-8Hiid4ee-puCyNl8pucfvZBUwgUc205J2nXPvzGsI0Vf0Ba4NKlKFRnxLfDSYLfrPM_iTLLo=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UC1iPIW3_4rAGOwaG9hbB30g",title:"벼리야담",subscriberCount:10000,thumbnail:"https://yt3.ggpht.com/pi5HS_UA96GO2jPU9nwMI_aOAq68TaQ6nX1ND4uFQ5v-OD9wgcfvm659Y5XVzajSBONHhE-XAg=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCjU8qOg9OClOfTfGA31-Uew",title:"야담설",subscriberCount:11400,thumbnail:"https://yt3.ggpht.com/eUvQxCkZDk9u1ID0rC-cZzwYLJZwd_xL2TT6XRMwV1cZeLmfBe1ejFK3f2bL98MRGi31PZS4cw=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UC_G0eFi1nXOrileJPtB1ywg",title:"설주야담",subscriberCount:11900,thumbnail:"https://yt3.ggpht.com/eg3bFHgCN8zMXHrQEUQnqLzisu_XxEiTQeihpXpO5XuF8Fh6KN1evHF9h7sqtjL50gUudHkltA=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCFqU8jKx6XJTrNWV9UF6sNg",title:"돌쇠야담-옛날이야기",subscriberCount:12200,thumbnail:"https://yt3.ggpht.com/w2Cc_62qUaR079coABDL7lgZ2CXuH19xCSAeT5BMeS6-rDNKQ6mzfa5w-WuwJIM2FH_oa3Y83A=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCpsotbs-x63amVEYzhUWhdQ",title:"야담주유소",subscriberCount:12500,thumbnail:"https://yt3.ggpht.com/eqOuWaBoVXPFzC2En1T_pRJWvHi27FICCsisn1mzNbmuisrnpPof1HijL1uDd7XQOywng4NDQw=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCG9mHvhn55-2sgyXtCTOH3Q",title:"복덩이야담",subscriberCount:13600,thumbnail:"https://yt3.ggpht.com/uETRQmFsOG3jiwFrYo46t6qED5nkRIbFDf9O4ub5n8BVbb6Jc5rLrpCQtJeQ7fI0rNkPfCwKSw=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCDvr5iN9dDLRyLu3-owr6nQ",title:"여우골 야담",subscriberCount:13700,thumbnail:"https://yt3.ggpht.com/1N6v2jGxz84uK9wTGhzaPBWAS4SPHG45fmgj5MyroDHw5VlSfbV6fjGxRw6_nrzMYwzJ1eOx=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCL685n6wTd4n4o7bpTtN6bg",title:"야담극장",subscriberCount:16500,thumbnail:"https://yt3.ggpht.com/7ZwMeUBHt2kbdfpemZXPfn5b85S4tvIcVoBEeOz436LKurXbQUH-w-vWhSck66a-oAmhessMSw=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UChz2wQcP80rNfo-3xHxgbZg",title:"금향야담",subscriberCount:17600,thumbnail:"https://yt3.ggpht.com/wKqHfEV4GH5KZzaK4-cdzAwZfLIN4cpHP04BKul98xGBdX4d2qreOaYaQ2Se7Hq8pNViRITNc7M=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCBc5mODVVWJtll269LvGO8Q",title:"비채야담",subscriberCount:18800,thumbnail:"https://yt3.ggpht.com/dV1sVgkszTB4YEitbtNilh-OsuW3tTSgzVhKyTBf2l_d5m830SHR5E7gGbkEY4cEJmqYRXR9tg=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCNgLKg9nJc4Y_vjP-VsEDaQ",title:"아름야담tv",subscriberCount:19600,thumbnail:"https://yt3.ggpht.com/OSkVggeAbMvdKCSdnNefYkA5iAeH-BMg9ucKpBdiCQ4AJALaVxpgefxaEQ6ZTXwr849qsjNyEw=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCw0BHaihR4uxe6i35vLMcHQ",title:"야담한자락",subscriberCount:21300,thumbnail:"https://yt3.ggpht.com/0YB2V9-ZCVv5uk4sp0CLWbLb6vJylewC2oiTKzWroC417WqeLAav08dNGYZCCit2dWtwMf3i=s88-c-k-c0x00ffffff-no-rj"},
+            {id:"UCFTBaXgJvUYlCfWiCEHIiQQ",title:"월하야담",subscriberCount:28000,thumbnail:"https://yt3.ggpht.com/0n7Sr_qJ-9ct6Dj9Sbrq7HesAsLqdR2vhr7AqXRiQDyrlsRkEBO2U3dabJueFSso0-w7dvC4=s88-c-k-c0x00ffffff-no-rj"}
+        ];
+
+        function loadPreset(preset, folderName) {
+            let folder = folders.find(f => f.name === folderName);
+            if (folder) {
+                if (!confirm(`"${folderName}" 폴더가 이미 있어요. 빠진 채널만 추가할까요?`)) return;
+            } else {
+                folder = { id: folderName, name: folderName, channels: [] };
+                folders.push(folder);
+            }
+            let added = 0, skipped = 0;
+            preset.forEach(p => {
+                if (folder.channels.some(ch => ch.id === p.id)) { skipped++; return; }
+                folder.channels.push({
+                    id: p.id,
+                    title: p.title,
+                    thumbnail: p.thumbnail || '',
+                    subscriberCount: p.subscriberCount || 0
+                });
+                added++;
+            });
+            saveFolders();
+            selectedFolderId = folder.id;
+            refreshChannelTab();
+            alert(`"${folderName}" 폴더에 ${added}개 채널을 불러왔어요!`
+                + (skipped ? `\n(${skipped}개는 이미 있었어요)` : ''));
+        }
+
+        function loadYadamPreset() { loadPreset(YADAM_PRESET, '야담'); }
+
+        // 경제학/경제지식 트렌디 채널 59개 (구독자 적은 순, 롱폼 채널만) — 2026-07-14 발굴
+        const ECONOMY_PRESET = [
+            {id:"UC530mdnfRTm5EQl0fVb19cA",title:"경제클립",subscriberCount:1350,thumbnail:""},
+            {id:"UCfOhunfxnhP8H5bkNIXcg8g",title:"세계경제이야기",subscriberCount:3000,thumbnail:""},
+            {id:"UCxsdQPulr-D5MyC-emextUA",title:"다모아 경제한입",subscriberCount:4110,thumbnail:""},
+            {id:"UCPG6xOcqyEYwl9zronq277Q",title:"똑똑한 경제노트",subscriberCount:4400,thumbnail:""},
+            {id:"UC7jPGKvqcdJYp8KiW_cjGrg",title:"로또경제학",subscriberCount:5960,thumbnail:""},
+            {id:"UC5hwbRRuNY7wP2oFwkbeSng",title:"경제탐험가",subscriberCount:7330,thumbnail:""},
+            {id:"UCgKj67DtxWM3DkvSu1fL3Mw",title:"K경제전쟁",subscriberCount:7590,thumbnail:""},
+            {id:"UCkVklEEvzZCffCHDR2lFH_A",title:"까칠한 냥박사의 경제학",subscriberCount:8420,thumbnail:""},
+            {id:"UCO42fLoLMxCOzs6P6VjApXA",title:"알고싶은경제학",subscriberCount:8430,thumbnail:""},
+            {id:"UCNKwvJNP9GMo8Hs2e5IQPzQ",title:"비밀의경제학",subscriberCount:9610,thumbnail:""},
+            {id:"UCFsboCo5eEAopIsV-7e4HZg",title:"부자가속 경제학",subscriberCount:10400,thumbnail:""},
+            {id:"UC3FNiJw3RXP9Ae0cDY-wOWg",title:"돈의민족",subscriberCount:11100,thumbnail:""},
+            {id:"UCeLO0-QH5Igul0R1Q0isiLw",title:"통통한 경제학",subscriberCount:11400,thumbnail:""},
+            {id:"UCYCtOGPkSMWTwwgxe03pnag",title:"시시한 경제학",subscriberCount:12200,thumbnail:""},
+            {id:"UCMyh92T40NDc9KU48fwvZ1g",title:"세계경제 돋보기",subscriberCount:12900,thumbnail:""},
+            {id:"UCO74-ZBoJMIgN1SbmTQV-rg",title:"쉬운경제학",subscriberCount:13400,thumbnail:""},
+            {id:"UCdO4PK4YGt3kWavoPqwZt8Q",title:"또박경제",subscriberCount:13800,thumbnail:""},
+            {id:"UCLria0414i_UsTki-vp0O6w",title:"살아남는경제학",subscriberCount:14000,thumbnail:""},
+            {id:"UCY4FGn0d7ltiW6GDypGnaMA",title:"코믹스 경제",subscriberCount:15500,thumbnail:""},
+            {id:"UCpFgkHCSjutpIijm5Py1ChQ",title:"뿌들뿌들 경제학",subscriberCount:15600,thumbnail:""},
+            {id:"UCMY7ee2GCzhpXbJFL6kHpNg",title:"나만 아는 경제학",subscriberCount:16600,thumbnail:""},
+            {id:"UCSxs8gZqWFsEp5fYMyo2Gfw",title:"술술 경제학",subscriberCount:17500,thumbnail:""},
+            {id:"UCEtvpbXKqH3ERjv8nPcOCoQ",title:"돈버는 경제학, 돈경",subscriberCount:17800,thumbnail:""},
+            {id:"UCfaksezC5llmOIZ6q_6QPzw",title:"어른의경제학",subscriberCount:20800,thumbnail:""},
+            {id:"UCrVqJnckVKzUAvzmk1rgElQ",title:"지식발굴단",subscriberCount:22200,thumbnail:""},
+            {id:"UCVyp8N1xXhPY3yNNjXuiMmw",title:"럭키경제학",subscriberCount:22300,thumbnail:""},
+            {id:"UC4rZP6di8Qd7Rh_CRW9LERw",title:"머리가 좋아지는 지박사",subscriberCount:22500,thumbnail:""},
+            {id:"UC7MYJo2LuhYBodjt3BTLyQw",title:"방구석 경제학",subscriberCount:22800,thumbnail:""},
+            {id:"UCIMbYMOydA2UvDqIm9PIn4Q",title:"돈냄새 경제학",subscriberCount:22900,thumbnail:""},
+            {id:"UC092e5GLtfXQMFRCoJYB0lw",title:"원가 공개 경제학",subscriberCount:24000,thumbnail:""},
+            {id:"UC0kGmibYdcvHeHVFbq1OagA",title:"섬뜩한경제학",subscriberCount:25300,thumbnail:""},
+            {id:"UCVc2lEXhZ9-xogfmjQZ9P2w",title:"경제읽음이",subscriberCount:25400,thumbnail:""},
+            {id:"UCb6Loqkzz-EaFryCL51n5Mg",title:"소름돋는 경제학",subscriberCount:26900,thumbnail:""},
+            {id:"UCONMiNdg0T45myj-o3aesTg",title:"경제방정식",subscriberCount:28100,thumbnail:""},
+            {id:"UCAjzp7zDnyxMqR3kOfFd78g",title:"경제왕토끼",subscriberCount:28700,thumbnail:""},
+            {id:"UCu4AJeb4Uv9OkqiabTJ13DQ",title:"깊은 경제",subscriberCount:28800,thumbnail:""},
+            {id:"UCuUmce84q387L3RtxuGM-7g",title:"생각의 경제학",subscriberCount:30300,thumbnail:""},
+            {id:"UCGJpC3KxPtAmEpUR1m3SitQ",title:"미니경제학",subscriberCount:30700,thumbnail:""},
+            {id:"UC9fMEBHAqyi_W0Tqc2QszFw",title:"부자의 경제학 - 경제 지식",subscriberCount:34000,thumbnail:""},
+            {id:"UC-d0TuLXBiOGUNrhDtoW58w",title:"귀에쏙쏙경제학",subscriberCount:34900,thumbnail:""},
+            {id:"UC1j1SGG9jBu9mrylpCIimjA",title:"비즈니스석 경제학",subscriberCount:36000,thumbnail:""},
+            {id:"UCe31M7Xrklr3yorwXPfmaBw",title:"시나리오 경제학",subscriberCount:37800,thumbnail:""},
+            {id:"UCk1xIGPS2Sory5JT-oc74zQ",title:"푸짐한 경제학",subscriberCount:40400,thumbnail:""},
+            {id:"UCCpD7zHThflnE5A3ee4I9-w",title:"돈되는 경제학",subscriberCount:43800,thumbnail:""},
+            {id:"UC4x-T7FgY0-n8jPT1NWfg2A",title:"팬더경제학",subscriberCount:47000,thumbnail:""},
+            {id:"UCjSZSpjHEyuKwwa8U9_Faqw",title:"똑똑해지는 경제학",subscriberCount:52800,thumbnail:""},
+            {id:"UCRwGtAIx3HXTx6HjDho0cCw",title:"똑똑한 경제학",subscriberCount:53800,thumbnail:""},
+            {id:"UChUIo6kavReZaRCIj_reZvg",title:"부자아빠의 경제학",subscriberCount:55100,thumbnail:""},
+            {id:"UCn49LSg2JSP-9rXV5G2kt4A",title:"경제해적단",subscriberCount:70400,thumbnail:""},
+            {id:"UCEDbet_4cQqo5_8Yw2ermKg",title:"똑똑하게 돈 벌기",subscriberCount:72700,thumbnail:""},
+            {id:"UCNLRGd_UrF31wirXhX16eJQ",title:"머니클래스 - 경제적 자유를 향하여",subscriberCount:84200,thumbnail:""},
+            {id:"UCOrRuK7IJq1a7scuEPYIm3w",title:"만화 경제학",subscriberCount:90600,thumbnail:""},
+            {id:"UCYTzG803E2YrAXsmc56Jv4g",title:"사또의 경제 이야기",subscriberCount:92200,thumbnail:""},
+            {id:"UChuu3KaoDnyttfN10GG169Q",title:"간단경제한스푼",subscriberCount:100000,thumbnail:""},
+            {id:"UCdA_ovMcYiNgbkf4624Tbxw",title:"집구석 경제학",subscriberCount:130000,thumbnail:""},
+            {id:"UCaLsqraxQaaRfm7HyT1x6ug",title:"유쾌한 경제학",subscriberCount:162000,thumbnail:""},
+            {id:"UC7cf7eZIucAAzkm_rwoawZw",title:"유치한경제학",subscriberCount:185000,thumbnail:""},
+            {id:"UCXa2557vQIHgOSpuxuhfE4w",title:"보통의 경제학 - 쉬운 경제 지식",subscriberCount:196000,thumbnail:""},
+            {id:"UC2aLhOkPPZEfxTGV7OqffbQ",title:"경제학 똑똑",subscriberCount:249000,thumbnail:""},
+            // ▼ 요청 시드 채널 6개
+            {id:"UChhjTakY69hZynLBvC3FErw",title:"지식의 신",subscriberCount:7900,thumbnail:""},
+            {id:"UC2JEVexKegalan4xSKjVQ0g",title:"얄궂은 경제학",subscriberCount:10500,thumbnail:""},
+            {id:"UCXwOVioPSL6T3mBvcGFuOYg",title:"경제초고수",subscriberCount:29400,thumbnail:""},
+            {id:"UCn222kwFLDyPzh1ARzLe-tA",title:"지식왕천재",subscriberCount:41600,thumbnail:""},
+            {id:"UCD69gLlIMcDAHG5AzNnp7Bg",title:"김재민TV",subscriberCount:74300,thumbnail:""},
+            {id:"UCF5YuZguGmklyhKFmMUzS7Q",title:"경제의 힘",subscriberCount:85200,thumbnail:""}
+        ];
+
+        function loadEconomyPreset() { loadPreset(ECONOMY_PRESET, '경제학'); }
+
+        function removeChannel(folderId, channelId) {
+            const folder = folders.find(f => f.id === folderId);
+            if (!folder) return;
+            folder.channels = folder.channels.filter(ch => ch.id !== channelId);
+            saveFolders();
+            refreshChannelTab();
+        }
+
+        // ===========================
+        // 백업 (파일로 내보내기/불러오기)
+        // ===========================
+        function exportBackup() {
+            if (!folders.length) { alert('내보낼 폴더가 없어요'); return; }
+            const blob = new Blob([JSON.stringify(folders, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            const d = new Date();
+            const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+            a.download = `유튜브파인더_백업_${stamp}.json`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function importBackup() {
+            document.getElementById('backupFileInput').click();
+        }
+
+        function handleBackupFile(event) {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                let saved;
+                try { saved = JSON.parse(reader.result); } catch (e) { alert('백업 파일 형식이 아니에요'); return; }
+                if (!Array.isArray(saved) || !saved.length) { alert('가져올 폴더가 없어요'); return; }
+                let added = 0, skipped = 0;
+                saved.forEach(f => {
+                    if (!f || !f.name || !Array.isArray(f.channels)) return;
+                    let folder = folders.find(x => x.name === f.name);
+                    if (!folder) {
+                        folder = { id: f.name, name: f.name, channels: [] };
+                        folders.push(folder);
+                    }
+                    f.channels.forEach(ch => {
+                        if (!ch || !ch.id) return;
+                        if (folder.channels.some(x => x.id === ch.id)) { skipped++; return; }
+                        folder.channels.push({
+                            id: ch.id,
+                            title: ch.title || ch.id,
+                            thumbnail: ch.thumbnail || '',
+                            subscriberCount: ch.subscriberCount || 0
+                        });
+                        added++;
+                    });
+                });
+                saveFolders();
+                refreshChannelTab();
+                alert(`가져오기 완료: 채널 ${added}개 추가` + (skipped ? `, ${skipped}개는 이미 있었음` : ''));
+            };
+            reader.readAsText(file);
+        }
+
+        // ===========================
+        // Channel Analysis
+        // ===========================
+        async function analyzeChannels() {
+            if (!selectedFolderId) { showError('channelResults', '분석할 폴더를 선택해주세요'); return; }
+            const folder = folders.find(f => f.id === selectedFolderId);
+            if (!folder || folder.channels.length === 0) {
+                showError('channelResults', '폴더에 채널이 없어요');
+                return;
+            }
+            const apiKey = localStorage.getItem('youtube_api_key');
+            if (!apiKey) { showError('channelResults', 'API 키를 먼저 저장해주세요 (맨 위 API 키 설정)'); return; }
+
+            const periodDays = parseInt(document.getElementById('analysisPeriod').value);
+            const minViews = parseInt(document.getElementById('analysisMinViews').value) || 0;
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - periodDays);
+
+            setLoading(true, '채널별 최신 영상을 가져오는 중...');
+            let apiCalls = 0;
+            try {
+                // 1) 구독자 수/썸네일 최신화 (50개당 할당량 1)
+                const channelIds = folder.channels.map(ch => ch.id);
+                const infos = await fetchChannelInfo(channelIds, apiKey);
+                apiCalls += Math.ceil(channelIds.length / 50);
+                const infoMap = {};
+                infos.forEach(info => { infoMap[info.id] = info; });
+                folder.channels.forEach(ch => {
+                    const info = infoMap[ch.id];
+                    if (info) {
+                        ch.title = info.title;
+                        ch.thumbnail = info.thumbnail;
+                        ch.subscriberCount = info.subscriberCount;
+                    }
+                });
+                saveFolders();
+
+                // 2) 채널별 업로드 목록에서 기간 내 영상 수집 (페이지당 할당량 1, 채널당 최대 3페이지=150개)
+                const videoIdToChannel = {};
+                const videoIds = [];
+                for (let i = 0; i < folder.channels.length; i++) {
+                    const ch = folder.channels[i];
+                    setProgress(Math.round(i / folder.channels.length * 70),
+                        `영상 목록 수집 중... (${i + 1}/${folder.channels.length}) ${ch.title}`);
+                    const uploadsId = 'UU' + ch.id.slice(2);   // 채널ID UC→UU가 업로드 재생목록ID
+                    let pageToken = '';
+                    for (let page = 0; page < 3; page++) {
+                        let data;
+                        try {
+                            data = await fetchYouTubeAPI('playlistItems', {
+                                part: 'contentDetails',
+                                playlistId: uploadsId,
+                                maxResults: '50',
+                                pageToken: pageToken || undefined,
+                                key: apiKey
+                            });
+                        } catch (e) {
+                            if (/할당량|API 키/.test(e.message)) throw e;
+                            break;   // 영상이 없거나 접근 불가한 채널은 건너뜀
+                        }
+                        apiCalls++;
+                        let reachedCutoff = false;
+                        (data.items || []).forEach(item => {
+                            const vid = item.contentDetails?.videoId;
+                            const publishedAt = item.contentDetails?.videoPublishedAt;
+                            if (!vid || !publishedAt) return;
+                            if (new Date(publishedAt) < cutoff) { reachedCutoff = true; return; }
+                            videoIds.push(vid);
+                            videoIdToChannel[vid] = ch;
+                        });
+                        pageToken = data.nextPageToken;
+                        if (reachedCutoff || !pageToken) break;
+                    }
+                }
+
+                if (videoIds.length === 0) {
+                    displayResults('channelResults', []);
+                    document.getElementById('channelApiUsage').textContent =
+                        `최근 ${periodDays}일 안에 올라온 영상이 없어요 | API 할당량 약 ${apiCalls} 사용 (하루 10,000)`;
+                    return;
+                }
+
+                // 3) 영상 상세 정보 (50개당 할당량 1)
+                setProgress(80, `영상 ${videoIds.length}개 상세 정보를 가져오는 중...`);
+                let results = [];
+                for (let i = 0; i < videoIds.length; i += 50) {
+                    const batch = videoIds.slice(i, i + 50);
+                    const data = await fetchYouTubeAPI('videos', {
+                        part: 'snippet,statistics,contentDetails',
+                        id: batch.join(','),
+                        maxResults: '50',
+                        key: apiKey
+                    });
+                    apiCalls++;
+                    (data.items || []).forEach(v => {
+                        const ch = videoIdToChannel[v.id];
+                        const viewCount = parseInt(v.statistics?.viewCount) || 0;
+                        const subs = ch ? ch.subscriberCount : 0;
+                        results.push({
+                            videoId: v.id,
+                            title: v.snippet.title,
+                            thumbnail: v.snippet.thumbnails?.medium?.url || `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`,
+                            channelId: ch ? ch.id : v.snippet.channelId,
+                            channelTitle: v.snippet.channelTitle,
+                            subscriberCount: subs,
+                            publishedAt: v.snippet.publishedAt,
+                            viewCount,
+                            likeCount: parseInt(v.statistics?.likeCount) || 0,
+                            commentCount: parseInt(v.statistics?.commentCount) || 0,
+                            durationSec: parseDuration(v.contentDetails?.duration),
+                            efficiency: subs > 0 ? viewCount / subs : 0
+                        });
+                    });
+                }
+
+                const beforeFilter = results.length;
+                // 쇼츠(3분 이하) 제외
+                results = results.filter(v => v.durationSec === 0 || v.durationSec > 180);
+                const shortsExcluded = beforeFilter - results.length;
+
+                results = results.filter(v => v.viewCount >= minViews);
+                results.sort((a, b) => b.efficiency - a.efficiency);
+
+                displayResults('channelResults', results);
+                document.getElementById('channelApiUsage').textContent =
+                    `${beforeFilter}개 영상 스캔 (쇼츠 ${shortsExcluded}개 제외) | 최근 ${periodDays}일 | API 할당량 약 ${apiCalls} 사용 (하루 10,000)`;
+            } catch (error) {
+                console.error(error);
+                showError('channelResults', error.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>
